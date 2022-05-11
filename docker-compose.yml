@@ -1,0 +1,17 @@
+version: '3'
+services:
+    electives_parser:
+        build:
+            context: ./
+            dockerfile: ./devops/Dockerfile
+        ports:
+            - '8000:8000'
+        environment:
+            - USERNAME_POSTGRES
+            - PASS_POSTGRES
+            - DBNAME
+            - HOSTNAME
+            - SITE_URL
+            - CRON_DAY
+            - CRON_HOUR
+            - CRON_MINUTE

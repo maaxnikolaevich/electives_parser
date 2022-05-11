@@ -1,0 +1,21 @@
+#конфиги подключения к бд
+connections:
+  postgres_db: &postgres_db
+    engine: "postgresql"
+    username: !ENV ${USERNAME_POSTGRES}
+    password: !ENV ${PASS_POSTGRES}
+    host_name: !ENV ${HOSTNAME}
+    db_name: !ENV ${DBNAME}
+
+#конфиг для парсера с сайта элективов
+electives_parse_conf:
+  conn_db: *postgres_db
+  params:
+    conn_url: !ENV ${SITE_URL}
+
+#конфиг переодичности запуска воркера
+task_manager:
+  cron:
+    day: !ENV ${CRON_DAY}
+    hour: !ENV ${CRON_HOUR}
+    minute: !ENV ${CRON_MINUTE}
