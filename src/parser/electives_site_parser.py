@@ -1,10 +1,11 @@
 from logging import getLogger
 from sqlalchemy.orm import sessionmaker
 from models_db import *
-from result_model import ResultModel
+from parser.result_model import ResultModel
 from typing import List
 from .abstract_site_parser import AbstractSiteParser
 import datetime
+
 
 logger = getLogger(__name__)
 
@@ -61,7 +62,6 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                 full_description=full_description,
                 minor=curr_minor_obj,
             )
-
         curr_tag_obj_list: List[Tag] = []
 
         if elective_tags is not None:
@@ -73,24 +73,27 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                     curr_tag_obj = Tag(name=f"{curr_tag}")
                     curr_tag_obj_list.append(curr_tag_obj)
                     session.add(curr_tag_obj)
+
         for item in curr_tag_obj_list:
             elective.tags.append(item)
 
-        curr_author_obj = (
-            session.query(Author)
-            .filter(
-                Author.name == f"{elective_author}"
-                and Author.description == f"{author_discr}"
-            )
-            .first()
-        )
+        if elective_author or author_discr is not None:
+            authors = dict(zip(elective_author, author_discr))
 
-        if curr_author_obj is None:
-            curr_author_obj = Author(
-                name=f"{elective_author}", description=f"{author_discr}"
-            )
+            for name, descript in authors.items():
+                curr_author_obj = (
+                    session.query(Author
+                                  ).filter(
+                        Author.name == f"{name}"
+                        and Author.description == f"{descript}"
+                    ).first())
 
-        elective.authors.append(curr_author_obj)
+                if curr_author_obj is None:
+                    curr_author_obj = Author(
+                        name=f"{name}", description=f"{descript}"
+                    )
+                    elective.authors.append(curr_author_obj)
+
         session.add(elective)
         session.commit()
 
@@ -101,8 +104,8 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                 "short_description": "тест",
                 "full_description": "тест фулл",
                 "minor": "минор",
-                "elective_author": "авдьавд авпп",
-                "author_discr": "dsfdffd",
+                "elective_author": ["hfgjh", "hghjg"],
+                "author_discr": ["hgjhjghj", "ghhjfhj"],
                 "elective_tags": ["dsffdsdf", "dsdggfd"],
             },
             {
@@ -110,8 +113,8 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                 "short_description": "kdfnk4",
                 "full_description": "retrtr",
                 "minor": None,
-                "elective_author": "l;ltrh льдапвдап",
-                "author_discr": "ddfgr",
+                "elective_author": ["fgdhgd", "hgkjjk"],
+                "author_discr": ["xhgfhg", "jhkjhjh"],
                 "elective_tags": ["тэг1", "тэг2"],
             },
             {
@@ -119,8 +122,8 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                 "short_description": "kduuk4",
                 "full_description": "ret56",
                 "minor": "test",
-                "elective_author": "авппва kfdgfd",
-                "author_discr": "fdgrg",
+                "elective_author": ["fdshhdhgf", "fdgh"],
+                "author_discr": ["hjgkgh", "hjgjlhjlj"],
                 "elective_tags": ["fgjfghj", "jhkiuk"],
             },
         ]

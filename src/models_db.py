@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, create_engine
+from sqlalchemy import Table, Integer, String, Column, ForeignKey, create_engine, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -29,7 +29,7 @@ class Elective(Base, BaseEntity):
     __tablename__ = "elective"
     title = Column(String(50), nullable=False)
     short_description = Column(String(50))
-    full_description = Column(String(255))
+    full_description = Column(Text)
     minor_id = Column(Integer, ForeignKey("minor.id"), nullable=True)
     authors = relationship("Author", secondary=author_elective, backref="elective")
     tags = relationship("Tag", secondary=tag_elective, backref="elective")

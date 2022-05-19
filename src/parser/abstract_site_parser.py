@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List
 from requests import get
 
-from result_model import ResultModel
+from parser.result_model import ResultModel
 
 
 class AbstractSiteParser(ABC):
