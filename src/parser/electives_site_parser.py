@@ -102,8 +102,10 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                 elective_attributes.append(author_descrs)
                 tags = []
                 tag_list = elective.find_all("div", class_="b-minor-elective--directions__item")
-                for tag in tag_list: tags.append(tag.text.strip())
-                elective_attributes.append(tags)
+                if(len(tag_list)>0):
+                    for tag in tag_list: tags.append(tag.text.strip())
+                    elective_attributes.append(tags)
+                else: elective_attributes.append('None')
                 elective_attributes.append(minor.find("div", class_="b-minor-elective--title").text.strip())
                 result_list.append({
                     'title': elective_attributes[0],
@@ -117,7 +119,7 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
         return result_list
 
     def _handle_data_non_minor(self):
-        with open("src/parser/non_minor_electives.html", encoding='utf8') as file:
+        with open(r"C:\Users\big70\PycharmProjects\electives_parser\src\parser\non_minor_electives.html", encoding='utf8') as file:
             data = file.read()
         soup = BeautifulSoup(data, "lxml")
         wrappers = soup.find_all("div", class_="b-minor-elective--wrapper")
