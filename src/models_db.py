@@ -28,7 +28,7 @@ author_elective = Table(
 class Elective(Base, BaseEntity):
     __tablename__ = "elective"
     title = Column(String(50), nullable=False)
-    short_description = Column(String(50))
+    short_description = Column(Text)
     full_description = Column(Text)
     minor_id = Column(Integer, ForeignKey("minor.id"), nullable=True)
     authors = relationship("Author", secondary=author_elective, backref="elective")

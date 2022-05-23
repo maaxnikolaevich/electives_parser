@@ -11,6 +11,8 @@ logger = getLogger(__name__)
 
 
 class ElectivesSiteSiteParser(AbstractSiteParser):
+    _HEADERS = 'headers'
+
     def __init__(self, conn_db, params):
         super(ElectivesSiteSiteParser, self).__init__(params)
         self._engine = create_engine(
@@ -39,8 +41,8 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
         full_description,
         minor,
         elective_tags,
-        elective_author,
-        author_discr,
+        elective_authors,
+        author_description,
     ):
         session = sessionmaker(bind=self._engine)
         session = session()
@@ -62,23 +64,20 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                 full_description=full_description,
                 minor=curr_minor_obj,
             )
-        curr_tag_obj_list: List[Tag] = []
 
         if elective_tags is not None:
             for curr_tag in elective_tags:
-                curr_tag_name = (
+                curr_tag_obj = (
                     session.query(Tag).filter(Tag.name == f"{curr_tag}").first()
                 )
-                if curr_tag_name is None:
+                if curr_tag_obj is None:
                     curr_tag_obj = Tag(name=f"{curr_tag}")
-                    curr_tag_obj_list.append(curr_tag_obj)
-                    session.add(curr_tag_obj)
+                    elective.tags.append(curr_tag_obj)
+                else:
+                    elective.tags.append(curr_tag_obj)
 
-        for item in curr_tag_obj_list:
-            elective.tags.append(item)
-
-        if elective_author or author_discr is not None:
-            authors = dict(zip(elective_author, author_discr))
+        if elective_authors is not None:
+            authors = dict(zip(elective_authors, author_description))
 
             for name, descript in authors.items():
                 curr_author_obj = (
@@ -93,40 +92,14 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                         name=f"{name}", description=f"{descript}"
                     )
                     elective.authors.append(curr_author_obj)
+                else:
+                    elective.authors.append(curr_author_obj)
 
         session.add(elective)
         session.commit()
 
     def _send_data_to_db(self):
-        data_stub = [
-            {
-                "title": "описание",
-                "short_description": "тест",
-                "full_description": "тест фулл",
-                "minor": "минор",
-                "elective_author": ["hfgjh", "hghjg"],
-                "author_discr": ["hgjhjghj", "ghhjfhj"],
-                "elective_tags": ["dsffdsdf", "dsdggfd"],
-            },
-            {
-                "title": "testt3",
-                "short_description": "kdfnk4",
-                "full_description": "retrtr",
-                "minor": None,
-                "elective_author": ["fgdhgd", "hgkjjk"],
-                "author_discr": ["xhgfhg", "jhkjhjh"],
-                "elective_tags": ["тэг1", "тэг2"],
-            },
-            {
-                "title": "testt5",
-                "short_description": "kduuk4",
-                "full_description": "ret56",
-                "minor": "test",
-                "elective_author": ["fdshhdhgf", "fdgh"],
-                "author_discr": ["hjgkgh", "hjgjlhjlj"],
-                "elective_tags": ["fgjfghj", "jhkiuk"],
-            },
-        ]
+        data_stub = []
         logger.info("STARTED SENDING DATA...")
         begin_time = datetime.datetime.now()
         for item in data_stub:
