@@ -10,8 +10,37 @@ from .abstract_site_parser import AbstractSiteParser
 import datetime
 from requests import get
 
-
 logger = getLogger(__name__)
+
+
+def _get_authors_info(authors_list):
+    author_names = []
+    author_descrs = []
+    for author in authors_list:
+        author_name = author.find("a", class_="b-minor-elective--author-name")
+        author_descr = author.find("div", class_="b-minor-elective--author-descr")
+        if author_name is not None:
+            author_names.append(
+                re.sub("^\s+|\n|\r|\s+$", '', author_name.text))
+        else:
+            author_names.append('None')
+        if author_descr is not None:
+            author_descrs.append(re.sub("^\s+|\n|\r|\s+$", '', author_descr.text))
+        else:
+            author_descrs.append('None')
+    return [author_names, author_descrs]
+
+
+def _generate_dict_from_attributes(elective_attributes):
+    return {
+        'title': elective_attributes[0],
+        'short_description': elective_attributes[1],
+        'full_description': elective_attributes[2],
+        'elective_authors': elective_attributes[3],
+        'author_description': elective_attributes[4],
+        'elective_tags': elective_attributes[5],
+        'minor': elective_attributes[6]
+    }
 
 
 class ElectivesSiteSiteParser(AbstractSiteParser):
@@ -35,7 +64,7 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
         )
 
     def __call__(self):
-        self._send_data_to_db()
+        self._handle_data_non_minor()
 
     def _handle_data(self):
         data = self._send_request().text
@@ -51,26 +80,23 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                 elective_attributes.append(re.sub("^\s+|\n|\r|\s+$", '', elective.find("div",
                                                                                        class_="b-minor-elective--descr").text))
                 elective_url = 'https://www.utmn.ru' + elective_title.find("a").get("href")
-                elective_page = get(elective_url, headers=self._HEADERS).text
-                page_soup = BeautifulSoup(elective_page, 'lxml')
-                full_descr = page_soup.find("div", class_='b-minor-content_text')
-                if full_descr is not None:
-                    elective_attributes.append(full_descr.text.strip())
-                else: elective_attributes.append('None')
+                elective_attributes.append(self._get_full_descr_from_url(elective_url))
 
                 authors_list = elective.find_all("div", class_="b-minor-elective--author")
                 author_names = []
-                author_descrs =[]
+                author_descrs = []
                 for author in authors_list:
                     author_name = author.find("a", class_="b-minor-elective--author-name")
                     author_descr = author.find("div", class_="b-minor-elective--author-descr")
                     if author_name is not None:
                         author_names.append(
                             re.sub("^\s+|\n|\r|\s+$", '', author_name.text))
-                    else: author_names.append('None')
+                    else:
+                        author_names.append('None')
                     if author_descr is not None:
                         author_descrs.append(re.sub("^\s+|\n|\r|\s+$", '', author_descr.text))
-                    else: author_descrs.append('None')
+                    else:
+                        author_descrs.append('None')
 
                 elective_attributes.append(author_names)
                 elective_attributes.append(author_descrs)
@@ -90,15 +116,51 @@ class ElectivesSiteSiteParser(AbstractSiteParser):
                 })
         return result_list
 
+    def _handle_data_non_minor(self):
+        with open("src/parser/non_minor_electives.html", encoding='utf8') as file:
+            data = file.read()
+        soup = BeautifulSoup(data, "lxml")
+        wrappers = soup.find_all("div", class_="b-minor-elective--wrapper")
+        authors = soup.find_all("div", class_="l-authors")
+        result_list = []
+        for i in range(len(wrappers)):
+            elective_attributes = []
+            title = wrappers[i].find("div", class_="b-minor-elective--title")
+            elective_attributes.append(title.text.strip())
+            short_description = wrappers[i].find("div", class_="b-minor-elective--descr").text
+            elective_attributes.append(re.sub("^\s+|\n|\r|\s+$", '', short_description))
+            elective_url = 'https://www.utmn.ru' + title.find("a").get("href")
+            elective_attributes.append(self._get_full_descr_from_url(elective_url))
+            elective_authors = authors[i].find_all("div", class_="b-minor-elective--author-info")
+            elective_authors = _get_authors_info(elective_authors)
+            elective_attributes.append(elective_authors[0])
+            elective_attributes.append(elective_authors[1])
+            tags = []
+            tag_list = wrappers[i].find_all("div", class_="b-minor-elective--directions__item")
+            for tag in tag_list: tags.append(tag.text.strip())
+            elective_attributes.append(tags)
+            elective_attributes.append('None')
+            result_list.append(_generate_dict_from_attributes(elective_attributes))
+        return result_list
+
+    def _get_full_descr_from_url(self, url):
+        elective_page = get(url, headers=self._HEADERS).text
+        page_soup = BeautifulSoup(elective_page, 'lxml')
+        full_descr = page_soup.find("div", class_='b-minor-content_text')
+        if full_descr is not None:
+            return full_descr.text.strip()
+        else:
+            return 'None'
+
     def _commit_db_objects(
-        self,
-        title,
-        short_description,
-        full_description,
-        minor,
-        elective_tags,
-        elective_authors,
-        author_description,
+            self,
+            title,
+            short_description,
+            full_description,
+            minor,
+            elective_tags,
+            elective_authors,
+            author_description,
     ):
         session = sessionmaker(bind=self._engine)
         session = session()
