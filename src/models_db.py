@@ -2,7 +2,7 @@ from sqlalchemy import Table, Integer, String, Column, ForeignKey, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-engine = create_engine("past conn db url")
+engine = create_engine("postgresql://njcheajwuhjdlc:38a7c1f2c24ff09e471e0df9a28fb0c56639b6802ccd5eaa30f6f3a2fb8c6b74@ec2-3-224-164-189.compute-1.amazonaws.com:5432/d6oh8k0llhckhe")
 Base = declarative_base()
 
 

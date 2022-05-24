@@ -2,21 +2,21 @@ from abc import ABC, abstractmethod
 from typing import Dict, List
 from requests import get
 
-from parser.result_model import ResultModel
+from src.parser.result_model import ResultModel
 
 
 class AbstractSiteParser(ABC):
     _HEADERS = None
 
     def __init__(self, params: Dict):
-        self._parsing_url = params.get("parsing_url")
+        self._parsing_url = params.get("conn_url")
 
     def _send_request(self):
         response = get(url=self._parsing_url, headers=self._HEADERS)
         return response
 
     @abstractmethod
-    def _handle_data(self) -> List[ResultModel]:
+    def _handle_data(self):
         pass
 
     @abstractmethod
